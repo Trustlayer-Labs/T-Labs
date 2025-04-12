@@ -1,76 +1,125 @@
 [
-    {
-      "article": "GDPR Article 4",
-      "title": "Personal Data",
-      "keywords": [
-        "email",
-        "name",
-        "IP",
-        "ID",
-        "address",
-        "phone number",
-        "client info",
-        "personal info"
-      ],
-      "examples": [
-        "Can you send me Jane’s email again?",
-        "Here is the client's phone number: 07700 900123",
-        "The patient ID is 443-55-9211"
-      ],
-      "risk_level": "high",
-      "recommendation": "redact or escalate"
-    },
-    {
-      "article": "GDPR Article 28",
-      "title": "Third-party Disclosure",
-      "keywords": [
-        "vendor",
-        "external",
-        "send to",
-        "forward to",
-        "sharing with third party"
-      ],
-      "examples": [
-        "Let’s email it to support.",
-        "We can send this to the vendor team"
-      ],
-      "risk_level": "high",
-      "recommendation": "escalate"
-    },
-    {
-      "category": "Social Engineering",
-      "title": "Repeated Info Requests",
-      "keywords": [
-        "send again",
-        "can you resend",
-        "lost it",
-        "missed that",
-        "didn't catch it",
-        "again please"
-      ],
-      "examples": [
-        "Can you send me Jane’s email again?",
-        "I lost the file, can you resend it?"
-      ],
-      "risk_level": "medium",
-      "recommendation": "warn and track user"
-    },
-    {
-      "category": "Social Engineering",
-      "title": "Unusual Access Requests",
-      "keywords": [
-        "need access",
-        "can you give me access",
-        "grant access",
-        "permission",
-        "credentials"
-      ],
-      "examples": [
-        "Can you give me access to their contact info?",
-        "Need credentials for that system"
-      ],
-      "risk_level": "medium",
-      "recommendation": "warn and log"
-    }
-  ]
-  
+  {
+    "article": "GDPR Article 4",
+    "title": "Personal Data",
+    "keywords": [
+      "email",
+      "name",
+      "IP",
+      "ID",
+      "address",
+      "phone number",
+      "client info",
+      "personal info",
+      "passport",
+      "SSN"
+    ],
+    "examples": [
+      "Can you send me Jane’s email again?",
+      "Here is the client's phone number: 07700 900123",
+      "The patient ID is 443-55-9211"
+    ],
+    "risk_level": "high",
+    "recommendation": "redact or escalate"
+  },
+  {
+    "article": "GDPR Article 28",
+    "title": "Third-party Disclosure",
+    "keywords": [
+      "vendor",
+      "external",
+      "send to",
+      "forward to",
+      "sharing with third party",
+      "send to vendor",
+      "external party",
+      "outside team",
+      "cc external"
+    ],
+    "examples": [
+      "Let’s email it to support.",
+      "We can send this to the vendor team"
+    ],
+    "risk_level": "high",
+    "recommendation": "escalate"
+  },
+  {
+    "article": "GDPR Article 32",
+    "title": "Security of Processing",
+    "keywords": [
+      "unencrypted",
+      "open link",
+      "insecure",
+      "plaintext",
+      "dropbox",
+      "google drive"
+    ],
+    "risk_level": "high",
+    "recommendation": "escalate"
+  },
+  {
+    "category": "Social Engineering",
+    "title": "Repeated Info Requests",
+    "keywords": [
+      "send again",
+      "can you resend",
+      "lost it",
+      "missed that",
+      "didn't catch it",
+      "again please",
+      "send it again",
+      "just checking again",
+      "follow up on info"
+    ],
+    "examples": [
+      "Can you send me Jane’s email again?",
+      "I lost the file, can you resend it?"
+    ],
+    "risk_level": "medium",
+    "recommendation": "warn and track user"
+  },
+  {
+    "category": "Social Engineering",
+    "title": "Urgency and Pressure",
+    "keywords": [
+      "ASAP",
+      "urgent",
+      "now",
+      "immediately",
+      "critical",
+      "emergency"
+    ],
+    "risk_level": "medium",
+    "recommendation": "log and monitor"
+  },
+  {
+    "category": "Social Engineering",
+    "title": "Unusual Access Requests",
+    "keywords": [
+      "need access",
+      "can you give me access",
+      "grant access",
+      "permission",
+      "credentials"
+    ],
+    "examples": [
+      "Can you give me access to their contact info?",
+      "Need credentials for that system"
+    ],
+    "risk_level": "medium",
+    "recommendation": "warn and log"
+  },
+  {
+    "category": "Social Engineering",
+    "title": "Impersonation Patterns",
+    "keywords": [
+      "this is John from IT",
+      "acting on behalf",
+      "I'm new here",
+      "CEO request",
+      "urgent request from boss"
+    ],
+    "risk_level": "high",
+    "recommendation": "escalate"
+  }
+]
