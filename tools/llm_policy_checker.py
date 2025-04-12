@@ -43,7 +43,8 @@ Respond in **JSON format** with the following fields only:
 - risk_level (string)
 - recommendation (string)
 - confidence (float from 0 to 1)
-- reason (string explanation of what triggered the match)
+- reason (string - provide a detailed explanation of EXACTLY what in the message triggered the match, including specific text that violates the policy)
+- violation_summary (string - a concise one-sentence explanation suitable for showing to users)
 
 Only return valid JSON. Do not include any prose or markdown.
 """
@@ -71,6 +72,7 @@ def check_llm_policy_match(message: str) -> dict:
             "recommendation": result.get("recommendation"),
             "confidence": float(result.get("confidence", 0)),
             "risk_reason": result.get("reason"),
+            "violation_summary": result.get("violation_summary", "This message may violate company policies.")
         }
 
     except Exception as e:
@@ -80,5 +82,6 @@ def check_llm_policy_match(message: str) -> dict:
             "risk_level": None,
             "recommendation": "log_only",
             "confidence": 0.0,
-            "risk_reason": f"Failed to parse LLM output: {e}"
+            "risk_reason": f"Failed to parse LLM output: {e}",
+            "violation_summary": "Error analyzing message content."
         }

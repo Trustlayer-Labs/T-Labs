@@ -102,13 +102,27 @@ if __name__ == "__main__":
         match = check_llm_policy_match(text)
 
         if match and match.get("confidence", 0) > 0.5:  # Threshold for logging incidents
-            incidents.append({
-                "source": "slack",
-                "user": msg.get("user"),
-                "message": text,
-                "timestamp": msg.get("timestamp"),
-                **match
-            })
+                # demo msg
+                print("\n⚠️ Potential Policy Violation Detected:")
+                print(f"Message: \"{text}\"")
+                print(f"Matched Policy: {match['article']} — {match['matched_policy']}")
+                print(f"Confidence: {match['confidence']:.2f}")
+                print(f"🧠 Violation Summary: {match['violation_summary']}")
+                print("-" * 60)
+                
+                incidents.append({
+                    "source": "slack",
+                    "user": msg.get("user"),
+                    "message": text,
+                    "timestamp": msg.get("timestamp"),
+                    "matched_policy": match.get("matched_policy"),
+                    "article": match.get("article"),
+                    "confidence": match.get("confidence"),
+                    "risk_level": match.get("risk_level"),
+                    "recommendation": match.get("recommendation"),
+                    "violation_summary": match.get("violation_summary"),
+                    "risk_reason": match.get("risk_reason")
+                })
 
     # Write the incidents log to a JSON file
     incident_log_path = logs_dir / "incidents.json"
