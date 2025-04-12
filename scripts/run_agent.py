@@ -35,12 +35,19 @@ logs_dir.mkdir(exist_ok=True)
 
 # === Slack tools ===
 def fetch_slack_messages(channel_id: str, limit: int = 20):
+    # limit is the number of messages to fetch
+    # channel_id is the Slack channel ID
+
     print(f"Fetching Slack messages from channel {channel_id}...")
-    result = portia.call_tool(
-        tool_id="portia:slack:user:conversation_history",
-        args={"channel_id": channel_id, "limit": limit}
+    result = portia.run(
+        f"Get recent messages from Slack channel {channel_id}",
+        ["portia:slack:user:conversation_history"]
     )
-    messages = result.get("messages", [])
+    messages = result
+    print("HERE ARE THE MESSAGES BELOW:")
+    print(type(messages))
+    print(messages.model_dump_json(indent=2))
+    #messages = result.get("messages", [])
     print(f"Retrieved {len(messages)} Slack messages")
     return messages
 
@@ -51,8 +58,7 @@ def list_channel_ids():
         print(f"{c['name']} — {c['id']}")
 
 if __name__ == "__main__":
-    list_channel_ids()
-    channel_id = "REPLACE_WITH_REAL_CHANNEL_ID"
+    channel_id = "C08N836TP5X"
 
     slack_messages = fetch_slack_messages(channel_id)
     print(f"Loaded {len(slack_messages)} Slack messages")
