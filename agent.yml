@@ -1,0 +1,70 @@
+agent:
+  name: Compliance Sentinel
+  model:
+    provider: "gemini"
+    api_key: "${GEMINI_API_KEY}"
+
+  triggers:
+    - input: slack.message
+      conditions:
+        - regex: "\\b\\w+@\\w+\\.\\w+\\b"
+        - ner: ["PERSON", "PHONE", "ID"]
+    - input: gmail.message
+    - input: transcript.uploaded
+
+  planning:
+    enabled: true
+    logic:
+      if:
+        - confidence > 0.85
+        - memory.past_flags >= 2
+      then:
+        action: auto_escalate
+      else:
+        action: request_clarification
+
+  clarification:
+    message_template: |
+      ⚠️ Risk Detected:
+      Reason: {risk_reason}
+      Policy: {matched_policy}
+      ➤ Action?
+    options:
+      - label: "Redact"
+        action: redact
+      - label: "Escalate"
+        action: escalate
+        requires_role: "compliance"
+      - label: "Ignore"
+        action: log_ignore
+
+  memory:
+    track:
+      by_user:
+        fields: ["past_flags", "last_flag_time", "ignore_history"]
+
+  constraints:
+    - if: user not in "compliance"
+      block: escalate
+
+  tools:
+    - name: logger
+      type: file
+      output_path: "./logs/incidents.json"
+    - name: email
+      type: smtp
+      config:
+        smtp_host: smtp.example.com
+        smtp_port: 587
+        username: ${SMTP_USER}
+        password: ${SMTP_PASS}
+        from_email: "sentinel@example.com"
+        to_email: "compliance@example.com"
+
+  execution_steps:
+    - parse input
+    - run policy match (RAG)
+    - create plan
+    - if confidence > threshold → act
+    - else → clarify
+    - log outcome
