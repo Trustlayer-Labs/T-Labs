@@ -1,96 +1,81 @@
 import json
-import re
+import os
 from pathlib import Path
 from datetime import datetime
+from dotenv import load_dotenv
+from portia import Portia, Config, DefaultToolRegistry, LLMProvider
+import sys
 
-# Load data
-def load_json(path):
-    return json.loads(Path(path).read_text())
+sys.path.append(str(Path(__file__).resolve().parent.parent))
 
+from tools.llm_policy_checker import check_llm_policy_match
+
+# === Load environment variables ===
+load_dotenv()
+api_key = os.getenv("PORTIA_API_KEY")
+if not api_key:
+    raise ValueError("PORTIA_API_KEY not found in .env file.")
+
+config = Config(portia_api_key=os.getenv("PORTIA_API_KEY"))
+tools = DefaultToolRegistry(config)
+portia = Portia(config=config, tools=tools)
+
+# === Set up project structure ===
 script_dir = Path(__file__).parent
-root_dir = script_dir.parent  # T-Labs directory
-
-data_dir = root_dir / "data"
+root_dir = script_dir.parent
 logs_dir = root_dir / "logs"
 logs_dir.mkdir(exist_ok=True)
 
-slack = load_json(data_dir / "slack_log.json")
-gmail = load_json(data_dir / "gmail_log.json")
-transcripts = load_json(data_dir / "transcripts.json")
-policies = load_json(root_dir / "policy_rag.json")
+# === Slack tools ===
+def fetch_slack_messages(channel_id: str, limit: int = 20):
+    print(f"Fetching Slack messages from channel {channel_id}...")
+    result = portia.call_tool(
+        tool_id="portia:slack:user:conversation_history",
+        args={"channel_id": channel_id, "limit": limit}
+    )
+    messages = result.get("messages", [])
+    print(f"Retrieved {len(messages)} Slack messages")
+    return messages
 
-print(f"Loaded {len(slack)} slack messages")
-print(f"Loaded {len(gmail)} emails")
-print(f"Loaded {len(transcripts)} transcripts")
-print(f"Loaded {len(policies)} policies")
+def list_channel_ids():
+    result = portia.call_tool("portia:slack:user:list_conversation_ids", args={})
+    print("Available Slack Channels:")
+    for c in result.get("channels", []):
+        print(f"{c['name']} — {c['id']}")
 
-# Print first few keywords from each policy
-print("\nPolicy keywords:")
-for i, policy in enumerate(policies):
-    keywords = policy.get("keywords", [])
-    sample = keywords[:3] if keywords else []
-    print(f"  Policy {i+1}: {policy.get('title')} - Sample keywords: {sample}")
-    
-def match_policy(text):
-    if not text:
-        return None
-        
-    for policy in policies:
-        for keyword in policy.get("keywords", []):
-            # Fix the regex pattern - remove extra backslash
-            if re.search(rf"\b{re.escape(keyword)}\b", text, re.IGNORECASE):
-                return {
-                    "matched_policy": policy.get("title"),
-                    "risk_reason": keyword,
-                    "action_taken": policy.get("recommendation"),
-                    "risk_level": policy.get("risk_level")
-                }
-    return None
+if __name__ == "__main__":
+    # Replace with your real Slack channel ID
+    channel_id = "REPLACE_WITH_REAL_CHANNEL_ID"
 
-# Add debugging to see the first item from each data source
-if slack:
-    print("\nSample slack message:", slack[0].get("text", "")[:50] + "...")
-if gmail:
-    print("Sample email body:", gmail[0].get("body", "")[:50] + "...")
-if transcripts:
-    print("Sample transcript:", transcripts[0].get("transcript", "")[:50] + "...")
+    slack_messages = fetch_slack_messages(channel_id)
+    print(f"Loaded {len(slack_messages)} Slack messages")
 
-incidents = []
+    incidents = []
 
-for msg in slack:
-    match = match_policy(msg.get("text", ""))
-    if match:
-        incidents.append({
-            "source": "slack",
-            "user": msg.get("user"),
-            "message": msg.get("text"),
-            "channel": msg.get("channel"),
-            "timestamp": msg.get("timestamp"),
-            **match
-        })
+    for msg in slack_messages:
+        text = msg.get("text", "")
+        if not text:
+            continue
 
-for email in gmail:
-    match = match_policy(email.get("body", ""))
-    if match:
-        incidents.append({
-            "source": "gmail",
-            "user": email.get("from"),
-            "message": email.get("body"),
-            "subject": email.get("subject"),
-            "timestamp": email.get("timestamp"),
-            **match
-        })
+        # Call Gemini to check compliance
+        match = check_llm_policy_match(text)
 
-for entry in transcripts:
-    match = match_policy(entry.get("transcript", ""))
-    if match:
-        incidents.append({
-            "source": "transcript",
-            "participants": entry.get("participants"),
-            "message": entry.get("transcript"),
-            "timestamp": entry.get("timestamp"),
-            **match
-        })
+        if match and match["confidence"] > 0.5:  # Threshold for logging
+            incidents.append({
+                "source": "slack",
+                "user": msg.get("user"),
+                "message": text,
+                "timestamp": msg.get("timestamp"),
+                **match
+            })
 
-Path(logs_dir / "incidents.json").write_text(json.dumps(incidents, indent=2))
-print(f"\nProcessed {len(incidents)} incidents.")
+    # Write incidents log
+    incident_log_path = logs_dir / "incidents.json"
+    incident_log_path.write_text(json.dumps(incidents, indent=2))
+    print(f"Processed {len(incidents)} incidents.")
+    print(f"Written to {incident_log_path}")
+
+
+if __name__ == "__main__":
+    list_channel_ids()
+
