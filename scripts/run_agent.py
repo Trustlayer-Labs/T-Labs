@@ -6,6 +6,8 @@ from dotenv import load_dotenv
 from portia import Portia, Config, DefaultToolRegistry, LLMProvider, LLMModel
 import sys
 
+
+
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 
 from tools.llm_policy_checker import check_llm_policy_match
@@ -43,7 +45,7 @@ def fetch_slack_messages(channel_id: str, limit: int = 20):
     return messages
 
 def list_channel_ids():
-    result = portia.tool_call("portia:slack:bot:list_conversation_ids", args={})
+    result = portia.run("give me all the slack conversations ids", ["portia:slack:bot:list_conversation_ids"])
     print("Available Slack Channels:")
     for c in result.get("channels", []):
         print(f"{c['name']} — {c['id']}")
