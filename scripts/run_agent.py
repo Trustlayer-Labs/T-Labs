@@ -3,7 +3,7 @@ import os
 from pathlib import Path
 from datetime import datetime
 from dotenv import load_dotenv
-from portia import Portia, Config, DefaultToolRegistry, LLMProvider
+from portia import Portia, Config, DefaultToolRegistry, LLMProvider, LLMModel
 import sys
 
 sys.path.append(str(Path(__file__).resolve().parent.parent))
@@ -13,10 +13,15 @@ from tools.llm_policy_checker import check_llm_policy_match
 # === Load environment variables ===
 load_dotenv()
 api_key = os.getenv("PORTIA_API_KEY")
+GOOGLE_API_KEY = os.getenv('GEMINI_API_KEY')
+
 if not api_key:
     raise ValueError("PORTIA_API_KEY not found in .env file.")
 
-config = Config(portia_api_key=os.getenv("PORTIA_API_KEY"))
+config = Config(portia_api_key=os.getenv("PORTIA_API_KEY"),
+                llm_provider=LLMProvider.GOOGLE_GENERATIVE_AI,
+                llm_model_name=LLMModel.GEMINI_2_0_FLASH,
+                google_api_key=GOOGLE_API_KEY)
 tools = DefaultToolRegistry(config)
 portia = Portia(config=config, tools=tools)
 
@@ -38,13 +43,13 @@ def fetch_slack_messages(channel_id: str, limit: int = 20):
     return messages
 
 def list_channel_ids():
-    result = portia.call_tool("portia:slack:user:list_conversation_ids", args={})
+    result = portia.tool_call("portia:slack:bot:list_conversation_ids", args={})
     print("Available Slack Channels:")
     for c in result.get("channels", []):
         print(f"{c['name']} — {c['id']}")
 
 if __name__ == "__main__":
-    # Replace with your real Slack channel ID
+    list_channel_ids()
     channel_id = "REPLACE_WITH_REAL_CHANNEL_ID"
 
     slack_messages = fetch_slack_messages(channel_id)
@@ -75,7 +80,5 @@ if __name__ == "__main__":
     print(f"Processed {len(incidents)} incidents.")
     print(f"Written to {incident_log_path}")
 
-
-if __name__ == "__main__":
-    list_channel_ids()
+    
 
