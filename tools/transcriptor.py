@@ -21,6 +21,7 @@ def upload_audio(filepath):
 
 
 def start_transcription(audio_url):
+    print(audio_url)
     endpoint = "https://api.assemblyai.com/v2/transcript"
     json_data = {
         "audio_url": audio_url,
@@ -49,14 +50,29 @@ def poll_transcription(transcript_id):
 
 def save_transcript_as_messages(transcript_json, output_path="data/transcripts.json"):
     results = []
+    # Safely get the timestamp, defaulting to None if 'created' key is absent
+    creation_timestamp = transcript_json.get("created")
+    
+    # Add the full transcript as a single entry
+    full_transcript = transcript_json.get("text", "")
+    if full_transcript:
+        results.append({
+            "user": "Full Transcript",
+            "text": full_transcript,
+            "timestamp": creation_timestamp,
+            "meeting_id": transcript_json["id"]
+        })
+    
+    # Process individual utterances if available
     for utterance in transcript_json.get("utterances", []):
         results.append({
             "user": utterance["speaker"],
             "text": utterance["text"],
-            "timestamp": transcript_json["created"],
+            "timestamp": creation_timestamp,
             "meeting_id": transcript_json["id"]
         })
 
+    # Save the results to the specified output path
     Path(output_path).parent.mkdir(exist_ok=True)
     with open(output_path, "w") as f:
         json.dump(results, f, indent=2)
@@ -64,8 +80,19 @@ def save_transcript_as_messages(transcript_json, output_path="data/transcripts.j
 
 
 def main(audio_filepath):
-    audio_url = upload_audio(audio_filepath)
+    #audio_url = upload_audio(audio_filepath)
+    audio_url = "https://assembly.ai/sports_injuries.mp3"
     transcript_id = start_transcription(audio_url)
     transcript_json = poll_transcription(transcript_id)
+    print(transcript_json)
     save_transcript_as_messages(transcript_json)
-    
+
+
+if __name__ == "__main__":
+    script_dir = Path(__file__).parent
+    root_dir = script_dir.parent  # T-Labs directory
+    audio_filepath = root_dir / "data" / "audio" / "156550__acclivity__a-dream-within-a-dream.wav" 
+    print("test", audio_filepath)
+    main(audio_filepath)
+
+
