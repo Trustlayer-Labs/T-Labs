@@ -138,6 +138,19 @@ if __name__ == "__main__":
                 print(f"🧠 Violation Summary: {match['violation_summary']}")
                 print("-" * 60)
 
+                if action in ["escalate", "auto-escalate"]:
+                    from tools.email_sender import send_compliance_email
+                    send_compliance_email(
+                        user=user,
+                        message=text,
+                        policy=f"{match.get('article')} – {match.get('matched_policy')}",
+                        reason=match.get("risk_reason"),
+                        action=action,
+                        risk_level=match.get("risk_level"),
+                        timestamp=timestamp,
+                        incident_id=len(incidents)
+                    )
+                    
                 if action in ["escalate", "auto-escalate", "redact"]:
                     increment_user_flags(user_memory, user)
 
