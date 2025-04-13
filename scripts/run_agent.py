@@ -9,7 +9,19 @@ import sys
 # Add the parent directory to the system path
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 
+
 from tools.llm_policy_checker import check_llm_policy_match
+from tools.user_memory import (
+    load_user_memory,
+    save_user_memory,
+    init_user_if_missing,
+    increment_user_flags,
+    get_user_flags,
+    is_user_ignored
+)
+
+user_memory = load_user_memory()
+
 
 # === Load environment variables ===
 load_dotenv()
@@ -95,13 +107,29 @@ if __name__ == "__main__":
     # Iterate over each message (now a list of dicts)
     for msg in slack_messages:
         text = msg.get("text", "")
+        user = msg.get("user", "unknown")
+        timestamp = msg.get("timestamp")
+
         if not text:
+            continue
+        
+        init_user_if_missing(user_memory, user)
+
+        if is_user_ignored(user_memory, user):
+            print(f"User {user} is ignored. Skipping message.")
             continue
 
         # Call Gemini to check for policy compliance
         match = check_llm_policy_match(text)
+        print(match, "MATCH")
+        confidence = match.get("confidence", 0)
 
-        if match and match.get("confidence", 0) > 0.5:  # Threshold for logging incidents
+        if match and confidence > 0.5:  # Threshold for logging incidents
+                flags = get_user_flags(user_memory, user)
+
+                auto_escalate = confidence > 0.8 and flags >= 3
+                action = "auto-escalate" if auto_escalate else match["recommendation"].lower()
+
                 # demo msg
                 print("\n⚠️ Potential Policy Violation Detected:")
                 print(f"Message: \"{text}\"")
@@ -109,7 +137,10 @@ if __name__ == "__main__":
                 print(f"Confidence: {match['confidence']:.2f}")
                 print(f"🧠 Violation Summary: {match['violation_summary']}")
                 print("-" * 60)
-                
+
+                if action in ["escalate", "auto-escalate", "redact"]:
+                    increment_user_flags(user_memory, user)
+
                 incidents.append({
                     "source": "slack",
                     "user": msg.get("user"),
@@ -117,11 +148,12 @@ if __name__ == "__main__":
                     "timestamp": msg.get("timestamp"),
                     "matched_policy": match.get("matched_policy"),
                     "article": match.get("article"),
-                    "confidence": match.get("confidence"),
+                    "confidence": confidence,
                     "risk_level": match.get("risk_level"),
                     "recommendation": match.get("recommendation"),
                     "violation_summary": match.get("violation_summary"),
-                    "risk_reason": match.get("risk_reason")
+                    "risk_reason": match.get("risk_reason"),
+                    "action_taken": action
                 })
 
     # Write the incidents log to a JSON file
@@ -129,3 +161,5 @@ if __name__ == "__main__":
     incident_log_path.write_text(json.dumps(incidents, indent=2))
     print(f"Processed {len(incidents)} incidents.")
     print(f"Written to {incident_log_path}")
+    save_user_memory(user_memory)
+

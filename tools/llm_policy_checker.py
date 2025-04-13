@@ -41,10 +41,17 @@ Respond in **JSON format** with the following fields only:
 - matched_policy (string)
 - article_or_category (string)
 - risk_level (string)
-- recommendation (string)
+- recommendation (string - MUST be one of these exact values: "escalate", "redact", "auto-escalate", "log_only", "ignore")
 - confidence (float from 0 to 1)
 - reason (string - provide a detailed explanation of EXACTLY what in the message triggered the match, including specific text that violates the policy)
 - violation_summary (string - a concise one-sentence explanation suitable for showing to users)
+
+For recommendations:
+- Use "escalate" for high-risk violations requiring human review
+- Use "redact" for content that must be immediately hidden
+- Use "auto-escalate" for critical violations needing immediate attention
+- Use "log_only" for minor issues or uncertain matches
+- Use "ignore" if you're highly confident no policy violation exists
 
 Only return valid JSON. Do not include any prose or markdown.
 """
