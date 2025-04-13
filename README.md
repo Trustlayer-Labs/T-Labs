@@ -1,4 +1,4 @@
-# Compliance Sentinel 🔒
+# Trustlayer Labs
 
 **Enterprise-Grade AI Compliance Agent for GDPR & Social Engineering Threats**
 
