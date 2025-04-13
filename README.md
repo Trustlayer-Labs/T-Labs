@@ -1,138 +1,153 @@
-# 🛡️ Compliance Sentinel – T-Labs
+# Compliance Sentinel 🔒
 
-A Portia-powered compliance and risk monitoring agent that detects GDPR violations and social engineering in Slack messages, Gmail emails, and meeting transcripts. Designed for enterprises to proactively flag risks, redact sensitive data, and generate daily audit summaries.
-
----
-
-## 📁 Project Structure
-
-```
-compliance-sentinel/
-├── agent.yml                         # Core Portia agent config (main brain)
-├── policy_rag.json                   # Policy definitions (GDPR, SocEng) used for RAG
-├── roles.json                        # Role-based access mapping
-├── user_memory.json                  # Tracks flag history per user
-├── .env                              # API keys (GEMINI, SMTP, etc.)
-├── requirements.txt                  # Python deps (portia, dotenv, etc.)
-
-├── data/                             # Input simulation data
-│   ├── slack_log.json                # Simulated Slack messages
-│   ├── gmail_log.json                # Simulated emails
-│   └── transcripts.json              # Simulated voice transcript payloads
-
-├── logs/                             # Auto-generated logs
-│   └── incidents.json                # All actions (redact, escalate, etc.)
-
-├── scripts/                          # Runners + testing + reporting
-│   ├── run_agent.py                  # Load input → run agent → log actions
-│   ├── test_inputs.py                # Feed simulated messages (Slack/Gmail/etc.)
-│   └── generate_report.py            # Daily markdown summary from logs
-
-├── tools/                            # Optional custom tools (e.g. for SMTP)
-│   └── email_sender.py               # (if using custom SMTP logic)
-
-├── reports/                          # Markdown/JSON reports (if CLI dashboard)
-│   └── daily_summary.md
-
-├── .github/workflows/                # GitHub Actions (optional automation)
-│   └── run-agent.yml                 # Run agent + email report + log cleanup etc.
-
-├── README.md                         # Setup instructions + demo flow
-└── conversation_config.yaml          # (Optional) For future podcast-style summaries
-```
+**AI-powered Compliance Monitoring for GDPR and Social Engineering Risks**
 
 ---
 
-## ⚙️ 1. Set Up the Environment
+## 📈 Overview
 
-Create a virtual environment and activate it:
+**Compliance Sentinel** is a multi-channel AI compliance agent that detects GDPR violations and social engineering attempts across workplace communication platforms. Built on top of the **Portia SDK**, the system leverages powerful LLM reasoning, role-based permissions, and human-in-the-loop workflows to ensure data protection and responsible internal communications.
+
+---
+
+## 📄 Features
+
+### 🔍 Intelligent Policy Monitoring
+- Detects violations of:
+  - GDPR Article 4 (Personal Data)
+  - GDPR Article 28 (Third-party Disclosure)
+  - GDPR Article 32 (Security of Processing)
+  - Social engineering and phishing behaviour
+
+### 🧠 Risk Analysis Engine
+- Uses **Gemini 1.5 Pro** (via Google Generative AI API) to:
+  - Interpret natural language messages
+  - Match internal policies using structured RAG logic
+  - Assign confidence scores and risk levels
+  - Recommend actions (escalate, redact, ignore)
+  - Provide human-readable violation explanations
+
+### 🧳️ User Behaviour Tracking
+- Tracks policy flags per user
+- Detects repeat offenders and auto-escalates
+- Implements cooldown periods ("Ignore similar messages for 24h")
+
+### 🔧 Incident Management & Logging
+- All violations stored in structured JSON logs
+- Escalates high-risk incidents via SMTP email
+- Managers can confirm or dismiss cases via a review portal
+
+### 🌐 Multi-Channel Monitoring
+- ✅ Slack messages (via Portia Slack integration)
+- ✅ Transcribed meeting audio (AssemblyAI + parser)
+- ⏳ Gmail support in progress
+
+---
+
+## 🛡️ Portia SDK Feature Usage
+
+| Portia Feature         | Implemented | Description                                      |
+|------------------------|-------------|--------------------------------------------------|
+| Planning               | ✅           | Agent declares intended actions beforehand        |
+| Clarification          | ✅           | Agent requests input from humans where required   |
+| Human-in-the-loop      | ✅           | Review portal confirms high-risk escalations      |
+| Stateful Memory        | ✅           | Tracks user flags, decisions, ignore states       |
+| Explainability         | ✅           | Violation summary + reason shown to end users     |
+| Multi-modal Input      | ✅           | Slack and voice transcripts                       |
+
+---
+
+## 🚀 Workflow Summary
+
+```plaintext
+Slack message or transcript ➔ Gemini LLM analysis
+➔ Matches GDPR policy ➔ Generates summary, explanation, risk score
+➔ Agent decides: escalate, redact, ignore
+➔ High-risk cases trigger email to compliance manager
+➔ Manager confirms via review portal (Flask)
+➔ Incident logged to persistent JSON system
+```
+
+---
+
+## 🧱 Tech Stack
+
+| Layer                 | Technology Used              |
+|----------------------|------------------------------|
+| Agent Framework      | Portia SDK                   |
+| LLM Integration      | Gemini (Google Gen AI)       |
+| Audio Transcription  | AssemblyAI                   |
+| Messaging Platform   | Slack                        |
+| Email Escalation     | Gmail SMTP (App Password)    |
+| Review UI            | Flask                        |
+| Data Storage         | JSON (logs, memory, policies)|
+
+---
+
+## 📂 Project Structure
 
 ```bash
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+compliance-sentinel/
+├── run_agent.py            # Main execution file (agent pipeline)
+├── review_portal.py        # Manager review portal
+├── tools/
+│   ├── llm_policy_checker.py
+│   ├── user_memory.py
+│   └── email_sender.py
+├── policy_rag.json         # GDPR and social engineering rules
+├── user_memory.json        # Per-user flag tracking
+├── logs/incidents.json     # Main incident log
+├── data/transcripts.json   # Meeting transcripts
+├── .env                    # API and email credentials
 ```
 
-Install dependencies:
+---
 
+## 🔧 How to Run
+
+1. Clone the repository and install dependencies:
 ```bash
 pip install -r requirements.txt
 ```
 
----
+2. Add your environment variables to `.env`:
+```env
+PORTIA_API_KEY=...
+GEMINI_API_KEY=...
+EMAIL_USER=your_email@gmail.com
+EMAIL_PASS=your_app_password
+```
 
-## 🔐 2. Configure Environment Variables
-
-Create a `.env` file using the template:
-
+3. Run the main agent pipeline:
 ```bash
-cp .env.example .env
+python run_agent.py
 ```
 
-Edit `.env` and fill in your credentials:
-
-```
-SLACK_BOT_TOKEN=xoxb-your-token-here
-SLACK_SIGNING_SECRET=your-signing-secret
-PORTIA_API_KEY=your-portia-key
-```
-
----
-
-## 🚀 3. Run the Agent
-
-To run the compliance agent on test inputs:
-
+4. Launch the manager review portal:
 ```bash
-python scripts/run_agent.py
-```
-
-This will process all available logs in the `data/` folder and record actions in `logs/incidents.json`.
-
----
-
-## 🧪 4. Test with Simulated Inputs
-
-Use `test_inputs.py` to inject new simulated data:
-
-```bash
-python scripts/test_inputs.py
-```
-
-You can add new Slack messages, emails, or transcripts to the respective JSON files in `data/`.
-
----
-
-## 📊 5. Generate Reports
-
-Create a markdown summary of flagged incidents:
-
-```bash
-python scripts/generate_report.py
-```
-
-The output will be saved to `reports/daily_summary.md`.
-
----
-
-## 🛠️ Optional: GitHub Actions Automation
-
-Automatically run the agent and email a report daily with the workflow in:
-
-```
-.github/workflows/run-agent.yml
+python review_portal.py
 ```
 
 ---
 
-## 🤖 Powered By
+## 🌟 Why This Project Wins
 
-- [Portia SDK](https://www.portia.ai/)
-- [OpenAI / Gemini APIs](https://deepmind.google/technologies/gemini/)
-- Python, dotenv, and your config of choice.
+- **Solves a real-world pain point**: internal data leaks & compliance fines
+- **Uses Portia as intended**: showcases every SDK strength (planning, memory, clarification)
+- **Extremely demoable**: input a Slack message, get real-time alert + human review
+- **Production-style design**: modular, maintainable, role-aware, and secure
 
 ---
 
-## 📬 Contact
+## 📝 Future Improvements
+- Add Gmail parsing (emails as policy triggers)
+- Build visual dashboard for flag trends and user risk scores
+- Implement feedback loop into policy tuning (auto-learn false positives)
 
-For questions, reach out to the **T-Labs** team or open an issue.
+---
 
+## 🙌 Built With
+- [Portia SDK](https://github.com/portiaAI/portia-agent-examples)
+- [Google Generative AI](https://ai.google.dev/)
+- [AssemblyAI](https://www.assemblyai.com/)
+- [Flask](https://flask.palletsprojects.com/)

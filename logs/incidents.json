@@ -54,7 +54,7 @@
     "violation_summary": "Requesting or sharing someone's email address requires authorization and may violate data privacy policies.",
     "risk_reason": "The message requests \"Jane's email\", which is considered personal data under GDPR Article 4. Sharing this information without proper authorization could violate data privacy regulations.",
     "action_taken": "auto-escalate",
-    "manager_confirmed": true
+    "manager_confirmed": false
   },
   {
     "source": "slack",
